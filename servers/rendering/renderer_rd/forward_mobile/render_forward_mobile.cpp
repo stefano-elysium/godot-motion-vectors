@@ -740,8 +740,8 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 			using_subpass_post_process = false;
 		}
 
-		if (scene_state.used_screen_texture || scene_state.used_depth_texture) {
-			// can't use our last two subpasses because we're reading from screen texture or depth texture
+		if (scene_state.used_screen_texture || scene_state.used_depth_texture || scene_state.used_motion_vectors_texture) {
+			// can't use our last two subpasses because we're reading from screen texture or depth texture or motion vectors texture
 			using_subpass_transparent = false;
 			using_subpass_post_process = false;
 		}
@@ -995,6 +995,11 @@ void RenderForwardMobile::_render_scene(RenderDataRD *p_render_data, const Color
 		if (scene_state.used_depth_texture) {
 			// Copy depth texture to backbuffer so we can read from it
 			_render_buffers_copy_depth_texture(p_render_data);
+		}
+
+		if (scene_state.used_motion_vectors_texture) {
+			// Copy motion vectors texture texture to backbuffer so we can read from it
+			_render_buffers_copy_motion_vectors_texture(p_render_data);
 		}
 
 		// transparent pass
@@ -1749,6 +1754,7 @@ void RenderForwardMobile::_fill_render_list(RenderListType p_render_list, const 
 		scene_state.used_screen_texture = false;
 		scene_state.used_normal_texture = false;
 		scene_state.used_depth_texture = false;
+		scene_state.used_motion_vectors_texture = false;
 	}
 	uint32_t lightmap_captures_used = 0;
 
@@ -1920,6 +1926,9 @@ void RenderForwardMobile::_fill_render_list(RenderListType p_render_list, const 
 				}
 				if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE) {
 					scene_state.used_depth_texture = true;
+				}
+				if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_MOTION_VECTORS_TEXTURE) {
+					scene_state.used_motion_vectors_texture = true;
 				}
 
 			} else if (p_pass_mode == PASS_MODE_SHADOW || p_pass_mode == PASS_MODE_SHADOW_DP) {
@@ -2371,7 +2380,7 @@ void RenderForwardMobile::GeometryInstanceForwardMobile::_mark_dirty() {
 void RenderForwardMobile::_geometry_instance_add_surface_with_material(GeometryInstanceForwardMobile *ginstance, uint32_t p_surface, SceneShaderForwardMobile::MaterialData *p_material, uint32_t p_material_id, uint32_t p_shader_id, RID p_mesh) {
 	RendererRD::MeshStorage *mesh_storage = RendererRD::MeshStorage::get_singleton();
 
-	bool has_read_screen_alpha = p_material->shader_data->uses_screen_texture || p_material->shader_data->uses_depth_texture || p_material->shader_data->uses_normal_texture;
+	bool has_read_screen_alpha = p_material->shader_data->uses_screen_texture || p_material->shader_data->uses_depth_texture || p_material->shader_data->uses_normal_texture || p_material->shader_data->uses_motion_vectors_texture;
 	bool has_base_alpha = p_material->shader_data->uses_alpha && (!p_material->shader_data->uses_alpha_clip || p_material->shader_data->uses_alpha_antialiasing);
 	bool has_blend_alpha = p_material->shader_data->uses_blend_alpha;
 	bool has_alpha = has_base_alpha || has_blend_alpha || has_read_screen_alpha;
@@ -2388,6 +2397,10 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(GeometryI
 
 	if (p_material->shader_data->uses_depth_texture) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE;
+	}
+
+	if (p_material->shader_data->uses_motion_vectors_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_MOTION_VECTORS_TEXTURE;
 	}
 
 	if (p_material->shader_data->uses_normal_texture) {

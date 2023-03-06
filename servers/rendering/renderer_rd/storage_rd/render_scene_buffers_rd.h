@@ -55,6 +55,8 @@
 #define RB_TEX_HALF_BLUR SNAME("half_blur") // only for raster!
 
 #define RB_TEX_BACK_DEPTH SNAME("back_depth")
+#define RB_TEX_MOTION_VECTORS_BACK SNAME("back_motion_vectors")
+
 
 class RenderSceneBuffersRD : public RenderSceneBuffers {
 	GDCLASS(RenderSceneBuffersRD, RenderSceneBuffers);

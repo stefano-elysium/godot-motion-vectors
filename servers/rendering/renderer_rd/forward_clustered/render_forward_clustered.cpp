@@ -799,6 +799,7 @@ void RenderForwardClustered::_fill_render_list(RenderListType p_render_list, con
 		scene_state.used_screen_texture = false;
 		scene_state.used_normal_texture = false;
 		scene_state.used_depth_texture = false;
+		scene_state.used_motion_vectors_texture = false;
 	}
 	uint32_t lightmap_captures_used = 0;
 
@@ -1025,6 +1026,9 @@ void RenderForwardClustered::_fill_render_list(RenderListType p_render_list, con
 				}
 				if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE) {
 					scene_state.used_depth_texture = true;
+				}
+				if (surf->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_MOTION_VECTORS_TEXTURE) {
+					scene_state.used_motion_vectors_texture = true;
 				}
 
 				if (p_color_pass_flags & COLOR_PASS_FLAG_MOTION_VECTORS) {
@@ -2032,6 +2036,13 @@ void RenderForwardClustered::_render_scene(RenderDataRD *p_render_data, const Co
 		_render_buffers_copy_depth_texture(p_render_data);
 	}
 
+	if (scene_state.used_motion_vectors_texture) {
+		RENDER_TIMESTAMP("Copy Motion Vectors Texture");
+
+		// Copy motion vector texture to backbuffer so we can read from it
+		_render_buffers_copy_motion_vectors_texture(p_render_data);
+	}
+
 	RENDER_TIMESTAMP("Render 3D Transparent Pass");
 
 	RD::get_singleton()->draw_command_begin_label("Render 3D Transparent Pass");
@@ -3012,7 +3023,6 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 		u.append_id(cb);
 		uniforms.push_back(u);
 	}
-
 	{
 		RD::Uniform u;
 		u.binding = 10;
@@ -3035,7 +3045,6 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 		u.append_id(texture);
 		uniforms.push_back(u);
 	}
-
 	{
 		RD::Uniform u;
 		u.binding = 12;
@@ -3137,6 +3146,19 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
 		RID ssil = rb.is_valid() && rb->has_texture(RB_SCOPE_SSIL, RB_FINAL) ? rb->get_texture(RB_SCOPE_SSIL, RB_FINAL) : RID();
 		RID texture = ssil.is_valid() ? ssil : texture_storage->texture_rd_get_default(is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK : RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+		u.append_id(texture);
+		uniforms.push_back(u);
+	}
+	{
+		RD::Uniform u;
+		u.binding = 21;
+		u.uniform_type = RD::UNIFORM_TYPE_TEXTURE;
+		RID texture;
+		if (rb.is_valid() && rb->has_texture(RB_SCOPE_BUFFERS, RB_TEX_MOTION_VECTORS_BACK)) {
+			texture = rb->get_texture(RB_SCOPE_BUFFERS, RB_TEX_MOTION_VECTORS_BACK);
+		} else {
+			texture = texture_storage->texture_rd_get_default(is_multiview ? RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK : RendererRD::TextureStorage::DEFAULT_RD_TEXTURE_BLACK);
+		}
 		u.append_id(texture);
 		uniforms.push_back(u);
 	}
@@ -3446,6 +3468,10 @@ void RenderForwardClustered::_geometry_instance_add_surface_with_material(Geomet
 
 	if (p_material->shader_data->uses_depth_texture) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE;
+	}
+
+	if (p_material->shader_data->uses_motion_vectors_texture) {
+		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_MOTION_VECTORS_TEXTURE;
 	}
 
 	if (p_material->shader_data->uses_normal_texture) {

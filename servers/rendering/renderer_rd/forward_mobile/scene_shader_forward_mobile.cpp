@@ -148,6 +148,7 @@ void SceneShaderForwardMobile::ShaderData::set_code(const String &p_code) {
 	uses_screen_texture_mipmaps = gen_code.uses_screen_texture_mipmaps;
 	uses_screen_texture = gen_code.uses_screen_texture;
 	uses_depth_texture = gen_code.uses_depth_texture;
+	uses_motion_vectors_texture = gen_code.uses_motion_vectors_texture;
 	uses_normal_texture = gen_code.uses_normal_roughness_texture;
 
 #ifdef DEBUG_ENABLED
@@ -345,7 +346,7 @@ bool SceneShaderForwardMobile::ShaderData::is_animated() const {
 }
 
 bool SceneShaderForwardMobile::ShaderData::casts_shadows() const {
-	bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_normal_texture;
+	bool has_read_screen_alpha = uses_screen_texture || uses_depth_texture || uses_motion_vectors_texture || uses_normal_texture;
 	bool has_base_alpha = (uses_alpha && (!uses_alpha_clip || uses_alpha_antialiasing)) || has_read_screen_alpha;
 	bool has_alpha = has_base_alpha || uses_blend_alpha;
 

@@ -249,6 +249,7 @@ private:
 		bool used_screen_texture = false;
 		bool used_normal_texture = false;
 		bool used_depth_texture = false;
+		bool used_motion_vectors_texture = false;
 		bool used_sss = false;
 
 		struct ShadowPass {
@@ -407,6 +408,7 @@ protected:
 			FLAG_USES_NORMAL_TEXTURE = 16384,
 			FLAG_USES_DOUBLE_SIDED_SHADOWS = 32768,
 			FLAG_USES_PARTICLE_TRAILS = 65536,
+			FLAG_USES_MOTION_VECTORS_TEXTURE = 131072,
 		};
 
 		union {

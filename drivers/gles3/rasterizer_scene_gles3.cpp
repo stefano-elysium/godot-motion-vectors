@@ -167,7 +167,7 @@ void RasterizerSceneGLES3::_geometry_instance_dependency_deleted(const RID &p_de
 void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(GeometryInstanceGLES3 *ginstance, uint32_t p_surface, GLES3::SceneMaterialData *p_material, uint32_t p_material_id, uint32_t p_shader_id, RID p_mesh) {
 	GLES3::MeshStorage *mesh_storage = GLES3::MeshStorage::get_singleton();
 
-	bool has_read_screen_alpha = p_material->shader_data->uses_screen_texture || p_material->shader_data->uses_depth_texture || p_material->shader_data->uses_normal_texture;
+	bool has_read_screen_alpha = p_material->shader_data->uses_screen_texture || p_material->shader_data->uses_depth_texture || p_material->shader_data->uses_normal_texture || p_material->shader_data->uses_motion_vectors_texture;
 	bool has_base_alpha = ((p_material->shader_data->uses_alpha && !p_material->shader_data->uses_alpha_clip) || has_read_screen_alpha);
 	bool has_blend_alpha = p_material->shader_data->uses_blend_alpha;
 	bool has_alpha = has_base_alpha || has_blend_alpha;
@@ -180,6 +180,10 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(Geometry
 
 	if (p_material->shader_data->uses_depth_texture) {
 		flags |= GeometryInstanceSurface::FLAG_USES_DEPTH_TEXTURE;
+	}
+
+	if (p_material->shader_data->uses_motion_vectors_texture) {
+		flags |= GeometryInstanceSurface::FLAG_USES_MOTION_VECTORS_TEXTURE;
 	}
 
 	if (p_material->shader_data->uses_normal_texture) {

@@ -83,6 +83,7 @@ public:
 		bool uses_screen_texture_mipmaps;
 		bool uses_screen_texture;
 		bool uses_depth_texture;
+		bool uses_motion_vectors_texture;
 		bool uses_normal_roughness_texture;
 	};
 

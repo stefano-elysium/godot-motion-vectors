@@ -146,6 +146,7 @@ void SceneShaderForwardClustered::ShaderData::set_code(const String &p_code) {
 	uses_screen_texture_mipmaps = gen_code.uses_screen_texture_mipmaps;
 	uses_screen_texture = gen_code.uses_screen_texture;
 	uses_depth_texture = gen_code.uses_depth_texture;
+	uses_motion_vectors_texture = gen_code.uses_motion_vectors_texture;
 	uses_normal_texture = gen_code.uses_normal_roughness_texture;
 	uses_vertex_time = gen_code.uses_vertex_time;
 	uses_fragment_time = gen_code.uses_fragment_time;

@@ -502,7 +502,8 @@ String ShaderCompiler::_dump_node_code(const SL::Node *p_node, int p_level, Gene
 				if (SL::is_sampler_type(E.value.type)) {
 					if (E.value.hint == SL::ShaderNode::Uniform::HINT_SCREEN_TEXTURE ||
 							E.value.hint == SL::ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE ||
-							E.value.hint == SL::ShaderNode::Uniform::HINT_DEPTH_TEXTURE) {
+							E.value.hint == SL::ShaderNode::Uniform::HINT_DEPTH_TEXTURE ||
+							E.value.hint == SL::ShaderNode::Uniform::HINT_MOTION_VECTORS_TEXTURE) {
 						continue; // Don't create uniforms in the generated code for these.
 					}
 					max_texture_uniforms++;
@@ -547,7 +548,8 @@ String ShaderCompiler::_dump_node_code(const SL::Node *p_node, int p_level, Gene
 
 				if (uniform.hint == SL::ShaderNode::Uniform::HINT_SCREEN_TEXTURE ||
 						uniform.hint == SL::ShaderNode::Uniform::HINT_NORMAL_ROUGHNESS_TEXTURE ||
-						uniform.hint == SL::ShaderNode::Uniform::HINT_DEPTH_TEXTURE) {
+						uniform.hint == SL::ShaderNode::Uniform::HINT_DEPTH_TEXTURE ||
+						uniform.hint == SL::ShaderNode::Uniform::HINT_MOTION_VECTORS_TEXTURE) {
 					continue; // Don't create uniforms in the generated code for these.
 				}
 
@@ -927,6 +929,9 @@ String ShaderCompiler::_dump_node_code(const SL::Node *p_node, int p_level, Gene
 						} else if (u.hint == ShaderLanguage::ShaderNode::Uniform::HINT_DEPTH_TEXTURE) {
 							name = "depth_buffer";
 							r_gen_code.uses_depth_texture = true;
+						} else if (u.hint == ShaderLanguage::ShaderNode::Uniform::HINT_MOTION_VECTORS_TEXTURE) {
+							name = "motion_vectors_buffer";
+							r_gen_code.uses_motion_vectors_texture = true;
 						} else {
 							name = _mkid(vnode->name); //texture, use as is
 						}
@@ -1537,6 +1542,7 @@ Error ShaderCompiler::compile(RS::ShaderMode p_mode, const String &p_code, Ident
 	r_gen_code.uses_screen_texture_mipmaps = false;
 	r_gen_code.uses_screen_texture = false;
 	r_gen_code.uses_depth_texture = false;
+	r_gen_code.uses_motion_vectors_texture = false;
 	r_gen_code.uses_normal_roughness_texture = false;
 
 	used_name_defines.clear();

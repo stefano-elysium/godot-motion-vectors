@@ -328,6 +328,39 @@ void RendererSceneRenderRD::_render_buffers_copy_depth_texture(const RenderDataR
 	RD::get_singleton()->draw_command_end_label();
 }
 
+void RendererSceneRenderRD::_render_buffers_copy_motion_vectors_texture(const RenderDataRD *p_render_data) {
+	Ref<RenderSceneBuffersRD> rb = p_render_data->render_buffers;
+	ERR_FAIL_COND(rb.is_null());
+
+	if(!rb->has_velocity_buffer(false)){
+		rb->ensure_velocity();
+	}
+	
+	RD::get_singleton()->draw_command_begin_label("Copy motion vectors texture");
+
+	// note, this only creates our backup motion vectors texture if we haven't already created it.
+	uint32_t usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT;
+	usage_bits |= RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_STORAGE_BIT;
+	usage_bits |= RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT; // set this as color attachment because we're copying data into it, it's not actually used as a depth buffer
+	rb->create_texture(RB_SCOPE_BUFFERS, RB_TEX_MOTION_VECTORS_BACK, RD::DATA_FORMAT_R32_SFLOAT, usage_bits, RD::TEXTURE_SAMPLES_1);
+
+	bool can_use_storage = _render_buffers_can_be_storage();
+	Size2i size = rb->get_internal_size();
+	for (uint32_t v = 0; v < p_render_data->scene_data->view_count; v++) {
+		RID motion_vector_texture = rb->get_velocity_buffer(v, false);
+		RID motion_vector_backup_texture = rb->get_texture_slice(RB_SCOPE_BUFFERS, RB_TEX_MOTION_VECTORS_BACK, v, 0);
+
+		if (can_use_storage) {
+			copy_effects->copy_to_rect(motion_vector_texture, motion_vector_backup_texture, Rect2i(0, 0, size.x, size.y));
+		} else {
+			RID motion_vector_backup_fb = FramebufferCacheRD::get_singleton()->get_cache(motion_vector_backup_texture);
+			copy_effects->copy_to_fb_rect(motion_vector_texture, motion_vector_backup_fb, Rect2i(0, 0, size.x, size.y));
+		}
+	}
+
+	RD::get_singleton()->draw_command_end_label();
+}
+
 void RendererSceneRenderRD::_render_buffers_post_process_and_tonemap(const RenderDataRD *p_render_data) {
 	RendererRD::TextureStorage *texture_storage = RendererRD::TextureStorage::get_singleton();
 
